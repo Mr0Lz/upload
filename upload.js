@@ -10,6 +10,7 @@
         var inputFile=opt.inputFile||"uploadBtn";
         var multiple=opt.multiple||false;
         var fileArr=[],base64dataArr=[];
+        var onInputChange=opt.onInputChange;
 
 
         function init(id) {
@@ -122,6 +123,7 @@
                 base64dataArr.push(dataUrl);//压缩后返回base64data
             }
             filechooser.value = '';
+            onInputChange&&onInputChange(obj,base64dataArr,fileArr);
 
         }
 
