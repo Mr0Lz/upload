@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<script type="text/javascript" src="upload.js"></script>
+	<style type="text/css">
+		
+
+.box{
+    background: #fff;
+}
+
+.item{
+    float: left;
+    display: block;
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background: #eee;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+.item span{
+display: block;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: url(./icon_x_feedback.png) no-repeat;
+    background-size: 100%;
+    top: -6px;
+    right: -6px;
+}
+.item img{
+    display: block;
+    margin: 0 auto;
+    margin-top: 50%;
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
+    max-width: 100%;
+}
+.uploadBtn,#listLength{
+    float: left;
+    display: block;
+    position: relative;
+    height: 98px;
+    width: 98px;
+    background: #fff;
+    border: 1px #b2b1b7 dashed;
+    background-image: url(./xj.png);
+    background-repeat: no-repeat;
+    background-position: center 24px;
+    background-size: 40%;
+    margin-bottom: 10px;
+}
+.uploadBtn{
+    margin-right: 10px;
+}
+.uploadBtn input{
+    width: 100%;
+    position: absolute;
+    display: block;
+    opacity: 0;
+    height: 100%;
+    z-index: 999;
+}
+.uploadBtn span,#listLength span{
+    display: block;
+    width: 100%;
+    line-height: 160px;
+    text-align: center;
+    color: #999;
+}
+
+	</style>
+</head>
+<body>
+	 <div id="upload">
+     </div>
+</body>
+<script type="text/javascript">
+	        var fileArr=upload("#upload", {
+            inputFile: "uploadBtn",
+            maxsize: 200,// 200 KB 对应的字节数
+            quality: 0.75,//图片压缩率   超过maxsize的大小才会压缩
+            maxLength: 10,//最多上传几张
+            multiple:false//单选
+        });
+        console.log(fileArr.getFileArr());//返回文件数组
+        console.log(fileArr.getBase64data());//小于maxsize不压缩返回file
+</script>
+</html>
