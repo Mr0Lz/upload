@@ -11,6 +11,7 @@ function upload(id,opt) {
     var multiple=opt.multiple||false;
     var fileArr=[],base64dataArr=[],imgDiv=[];
     var onInputChange=opt.onInputChange;
+    var onDelete=opt.onDelete;
 
 
     function init(id) {
@@ -30,6 +31,7 @@ function upload(id,opt) {
                 return fileArr;
             },
             getBase64data:function(){
+                sortBase64Arr();
                 return base64dataArr;
             }
         };
@@ -84,7 +86,6 @@ function upload(id,opt) {
 
 
     function readImg(files, imgDiv) {
-        console.log(files,imgDiv);
         for (var i = 0; i < files.length; i++) {
             // 接受的图片类型
             var file = files[i];
@@ -133,7 +134,7 @@ function upload(id,opt) {
     function toPreviewer(previewer,dataUrl) {
         previewer.src = dataUrl;
         filechooser.value = '';
-        onInputChange&&onInputChange(obj,base64dataArr,fileArr);
+        onInputChange&&onInputChange(obj,obj.getBase64data(),fileArr);
     }
 
 
@@ -157,6 +158,7 @@ function upload(id,opt) {
                     if (r) {
                         box.removeChild(this);
                         checkListLength(box);
+                        onDelete&&onDelete(obj,obj.getBase64data(),fileArr);
                     }
                 }
 
@@ -175,6 +177,21 @@ function upload(id,opt) {
             }
         }
     }
+    //按用户上传顺序排序Base64Arr
+    function sortBase64Arr() {
+        var arr=[];
+        for(var i=0;i<fileArr.length;i++){
+                var n=fileArr[i].name;
+            for(var j=0;j<base64dataArr.length;j++){
+                if(n==base64dataArr[j].fname){
+                    arr.push(base64dataArr[j]);
+                    break;
+                }
+            }
+        }
+        base64dataArr = arr;
+    }
+    
     //  重置base64Arr
     function base64Arr(fileArr){
         for(var i=0;i<fileArr.length;i++){
