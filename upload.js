@@ -53,6 +53,7 @@ function upload(id,opt) {
     function preview(filechooser, maxsize, box) {
 
         filechooser.onchange = function () {
+            base64dataArr.length=0;//清空base64dataArr
             var l = document.getElementById("listLength");
             if (!!l) {
                 box.removeChild(l);
@@ -110,8 +111,8 @@ function upload(id,opt) {
                 }else {
                     compressedDataUrl = compress(img, file.type, quality);
                 }
+                base64dataArr.push({fname:file.name,base64dataUrl:compressedDataUrl});
                 toPreviewer(previewer,compressedDataUrl);
-                base64dataArr.push(compressedDataUrl);
                 img = null;
             };
             img.src = result;
@@ -150,6 +151,7 @@ function upload(id,opt) {
                 var target = e.srcElement || e.target;
                 if (target.tagName.toLowerCase() == "span") {
                     removeArr(fileArr,null,"name",name);
+                    removeArr(base64dataArr,null,"fname",name);
                     removeArr(imgDiv,"getAttribute","fname",name);
                     var r = confirm("确认要删除这张图片?");
                     if (r) {
