@@ -5,6 +5,7 @@
 function upload(id,opt) {
     if (typeof FileReader == "undefined"||typeof FormData == "undefined") {
         document.write("您的浏览器不支持FileReader或者FormData");
+        return;
     }
 
     var inputFile=opt.inputFile||"uploadBtn";
