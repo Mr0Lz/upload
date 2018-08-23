@@ -80,17 +80,21 @@ display: block;
      </div>
 </body>
 <script type="text/javascript">
-	        var fileArr=upload("#upload", {
-            inputFile: "uploadBtn",
-            maxsize: 200,// 200 KB 对应的字节数
-            quality: 0.75,//图片压缩率   超过maxsize的大小才会压缩
-            maxLength: 10,//最多上传几张
-            multiple:false,//单选
-            onInputChange:function (obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data(小于maxsize不压缩返回file),fileArr
-                console.log(obj,base64dataArr,fileArr);
-            }
-        });
-        console.log(fileArr.getFileArr());//返回文件数组
-        console.log(fileArr.getBase64data());//小于maxsize不压缩返回file
+    var fileArr=upload("#upload", {
+        inputFile: "uploadBtn",
+        maxsize: 200,// 200 KB 对应的字节数
+        quality: 0.75,//图片压缩率   超过maxsize的大小才会压缩
+        maxLength: 3,//最多上传几张
+        multiple:false,//单选
+        onDelete:function(obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data,fileArr   删除文件是触发
+            //console.log(obj,base64dataArr,fileArr);
+        },
+        onInputChange:function (obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data,fileArr
+            //console.log(obj,base64dataArr,fileArr);
+        }
+
+    });
+    console.log(fileArr.getFileArr());//返回文件数组
+    console.log(fileArr.getBase64data());//小于maxsize不压缩返回file
 </script>
 </html>
