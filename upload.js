@@ -1,7 +1,3 @@
-
-
-
-
 function upload(id,opt) {
     if (typeof FileReader == "undefined"||typeof FormData == "undefined") {
         document.write("您的浏览器不支持FileReader或者FormData");
@@ -13,21 +9,36 @@ function upload(id,opt) {
     var fileArr=[],base64dataArr=[],imgDiv=[];
     var onInputChange=opt.onInputChange;
     var onDelete=opt.onDelete;
-
+    var onClickImg=opt.onClickImg;
+    var isDOM = ( typeof HTMLElement === 'object' ) ?
+        function(obj){
+            return obj instanceof HTMLElement;
+        } :
+        function(obj){
+            return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
+        };
 
     function init(id) {
-        var str = '<div class="box"><div id='+inputFile+' class="uploadBtn">' +
+        var str = '<div class="box"><div  class="uploadBtn">' +
             '<input type="file"  ' +(multiple?"":"multiple") +' accept="image/gif,image/jpeg,image/jpg,image/png,image/svg">' +
             '<span>添加图片</span></div>' +
             '</div>';
 
-        var div = document.querySelector(id);
+        var div = null;
+        if (id == null){
+            return null;
+        }
+        if(isDOM(id)){
+            div = id;
+        }else{
+            div = document.querySelector(id);
+        }
         div.innerHTML = str;
         return {
             div: div,
             imgDiv:imgDiv,
             file: div.querySelector("input"),
-            box: document.querySelector(id+">div"),
+            box: div.querySelector('.box'),
             getFileArr:function(){
                 return fileArr;
             },
@@ -37,33 +48,37 @@ function upload(id,opt) {
             }
         };
     }
-
     var obj = init(id);
     var filechooser = obj.file;
     // 200 KB 对应的字节数
     var maxsize = opt.maxsize ? opt.maxsize*1024 : 200 * 1024;
     var quality=  opt.quality ? opt.quality : 0.75;
     var maxLength =  opt.maxLength ? opt.maxLength : 3;
-    var listLength = listLength();
+    var listLength = listLengthFn();
     var childLength = maxLength + 1;
     obj.box.appendChild(listLength);
-    preview(filechooser, maxsize, obj.box);
+    preview(filechooser, maxsize, obj.box,listLength);
 
     return obj;
 
 
     //生成预览图片
-    function preview(filechooser, maxsize, box) {
+    function preview(filechooser, maxsize, box ) {
 
         filechooser.onchange = function () {
             base64dataArr.length=0;//清空base64dataArr
-            var l = document.getElementById("listLength");
+            var l = listLength;
             if (!!l) {
                 box.removeChild(l);
             }
             var files = this.files;
+
             if (files.length > maxLength) {
-                alert("最多" + maxLength + "张");
+                if(opt.outOfRange){
+                    opt.outOfRange(maxLength);
+                }else{
+                    alert("最多" + maxLength + "张");
+                }
             }
             for (var i = 0; i < files.length; i++) {
                 if (i < maxLength && box.children.length < childLength) {
@@ -74,7 +89,11 @@ function upload(id,opt) {
                     fileArr.push(f);
                     imgDiv.push(div);
                 } else {
-                    alert("已经超过" + maxLength + "张");
+                    if(opt.outOfRange){
+                        opt.outOfRange(maxLength);
+                    }else{
+                        alert("最多" + maxLength + "张");
+                    }
                     break;
                 }
             }
@@ -83,7 +102,8 @@ function upload(id,opt) {
         };
 
     }
-    
+
+
 
 
     function readImg(files, imgDiv) {
@@ -131,7 +151,7 @@ function upload(id,opt) {
     }
 
 
-    
+
     function toPreviewer(previewer,dataUrl) {
         previewer.src = dataUrl;
         filechooser.value = '';
@@ -139,8 +159,11 @@ function upload(id,opt) {
     }
 
 
-    function listLength() {
-        return createElement("div", "<span>0/"+maxLength+"</span>", {id: "listLength"});
+    function listLengthFn() {
+        var div = createElement("div", "<span>0/"+maxLength+"</span>");
+        div.setAttribute('img-length','listLength');
+        div.setAttribute('class','listLength');
+        return div
     }
 
     function imgbox(name) {
@@ -162,6 +185,10 @@ function upload(id,opt) {
                         onDelete&&onDelete(obj,obj.getBase64data(),fileArr);
                     }
                 }
+                //点击图片
+                if (target.tagName.toLowerCase() == "img") {
+                    onClickImg&&onClickImg(e,target);
+                }
 
             }
         });
@@ -171,10 +198,10 @@ function upload(id,opt) {
     function removeArr(arr,type,key,name) {
         for (var i=0;i<arr.length;i++) {
             if(type=="getAttribute"){
-              if (arr[i].getAttribute(key)==name) arr.splice(i,1);
+                if (arr[i].getAttribute(key)==name) arr.splice(i,1);
             }
             else{
-             if (arr[i][key]==name) arr.splice(i,1);
+                if (arr[i][key]==name) arr.splice(i,1);
             }
         }
     }
@@ -182,7 +209,7 @@ function upload(id,opt) {
     function sortBase64Arr() {
         var arr=[];
         for(var i=0;i<fileArr.length;i++){
-                var n=fileArr[i].name;
+            var n=fileArr[i].name;
             for(var j=0;j<base64dataArr.length;j++){
                 if(n==base64dataArr[j].fname){
                     arr.push(base64dataArr[j]);
@@ -192,7 +219,7 @@ function upload(id,opt) {
         }
         base64dataArr = arr;
     }
-    
+
     //  重置base64Arr
     function base64Arr(fileArr){
         for(var i=0;i<fileArr.length;i++){
