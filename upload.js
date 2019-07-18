@@ -20,7 +20,7 @@ function upload(id,opt) {
 
     function init(id) {
         var str = '<div class="box"><div  class="uploadBtn">' +
-            '<input type="file"  ' +(multiple?"":"multiple") +' accept="image/gif,image/jpeg,image/jpg,image/png,image/svg">' +
+            '<input type="file"  ' +(multiple?'':'multiple') +' accept="image/gif,image/jpeg,image/jpg,image/png,image/svg">' +
             '<span>添加图片</span></div>' +
             '</div>';
 
@@ -39,11 +39,15 @@ function upload(id,opt) {
             imgDiv:imgDiv,
             file: div.querySelector("input"),
             box: div.querySelector('.box'),
-            getFileArr:function(){
-                return fileArr;
+            getFileArr:function(type){
+                var arr = [];
+                for (var i=0;i<fileArr.length;i++){
+                    arr.push(fileArr[i].f);
+                }
+                return type == 1 ? arr : fileArr ;
             },
             getBase64data:function(){
-                sortBase64Arr();
+                sortBase64Arr(fileArr);
                 return base64dataArr;
             }
         };
@@ -55,7 +59,6 @@ function upload(id,opt) {
     var quality=  opt.quality ? opt.quality : 0.75;
     var maxLength =  opt.maxLength ? opt.maxLength : 3;
     var listLength = listLengthFn();
-    var childLength = maxLength + 1;
     obj.box.appendChild(listLength);
     preview(filechooser, maxsize, obj.box,listLength);
 
@@ -66,39 +69,33 @@ function upload(id,opt) {
     function preview(filechooser, maxsize, box ) {
 
         filechooser.onchange = function () {
-            base64dataArr.length=0;//清空base64dataArr
-            var l = listLength;
-            if (!!l) {
-                box.removeChild(l);
-            }
             var files = this.files;
-
-            if (files.length > maxLength) {
+            //选中文件时的长度 大于 最大长度 return
+            if ((files.length + fileArr.length)  > maxLength) {
                 if(opt.outOfRange){
                     opt.outOfRange(maxLength);
                 }else{
                     alert("最多" + maxLength + "张");
                 }
+                //return false;
             }
-            for (var i = 0; i < files.length; i++) {
-                if (i < maxLength && box.children.length < childLength) {
-                    var f=files[i];
-                    var div = imgbox(f.name);
-                    div.setAttribute("fname",f.name);
+            for (var i = 0; i < files.length  ; i++) {
+                if( fileArr.length < maxLength) {
+                    var f = files[i];
+                    var fId = randomId (10);
+                    var div = imgbox(fId);
+                    div.setAttribute("fId", fId);
                     box.appendChild(div);
-                    fileArr.push(f);
+                    fileArr.push({f:f,fId:fId});
                     imgDiv.push(div);
-                } else {
-                    if(opt.outOfRange){
-                        opt.outOfRange(maxLength);
-                    }else{
-                        alert("最多" + maxLength + "张");
-                    }
+                }else{
                     break;
                 }
             }
             checkListLength(box);
             readImg(fileArr, imgDiv);
+
+
         };
 
     }
@@ -109,13 +106,14 @@ function upload(id,opt) {
     function readImg(files, imgDiv) {
         for (var i = 0; i < files.length; i++) {
             // 接受的图片类型
-            var file = files[i];
+            var file = files[i].f;
             if (!/\/(?:jpeg|jpg|png|jpeg|gif|svg)/i.test(file.type)) return;
-            read(file, imgDiv[i]);
+            read(files[i], imgDiv[i]);
         }
     }
 
     function read(file,viewer) {
+        base64dataArr.length = 0;
         try {
             var previewer = viewer.getElementsByTagName("img")[0];
         } catch (e) {
@@ -129,11 +127,11 @@ function upload(id,opt) {
                 var compressedDataUrl = "";
                 // 如果图片小于 200kb，不压缩
                 if (result.length <= maxsize) {
-                    compressedDataUrl = compress(img, file.type, 0);
+                    compressedDataUrl = compress(img, file.f.type, 0);
                 }else {
-                    compressedDataUrl = compress(img, file.type, quality);
+                    compressedDataUrl = compress(img, file.f.type, quality);
                 }
-                base64dataArr.push({fname:file.name,base64dataUrl:compressedDataUrl});
+                base64dataArr.push({fId:file.fId,base64dataUrl:compressedDataUrl});
                 toPreviewer(previewer,compressedDataUrl);
                 img = null;
             };
@@ -147,7 +145,7 @@ function upload(id,opt) {
         reader.onload = function () {
             fn(this,previewer);
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(file.f);
     }
 
 
@@ -157,11 +155,18 @@ function upload(id,opt) {
         filechooser.value = '';
         onInputChange&&onInputChange(obj,obj.getBase64data(),fileArr);
     }
-
+     function randomId (n) {
+        var str = "abcdefghijklmnopqrstuvwxyz0123456789";
+        var result = "";
+        for(var i = 0; i < n; i++) {
+            result += str[parseInt(Math.random() * str.length)];
+        }
+        return result;
+    }
 
     function listLengthFn() {
         var div = createElement("div", "<span>0/"+maxLength+"</span>");
-        div.setAttribute('img-length','listLength');
+        // div.setAttribute('img-length','listLength');
         div.setAttribute('class','listLength');
         return div
     }
@@ -175,11 +180,10 @@ function upload(id,opt) {
                 var e = e || window.event;
                 var target = e.srcElement || e.target;
                 if (target.tagName.toLowerCase() == "span") {
-                    removeArr(fileArr,null,"name",name);
-                    removeArr(base64dataArr,null,"fname",name);
-                    removeArr(imgDiv,"getAttribute","fname",name);
                     var r = confirm("确认要删除这张图片?");
                     if (r) {
+                        removeArr(fileArr,null,"fId",name);
+                        removeArr(imgDiv,"getAttribute","fId",name);
                         box.removeChild(this);
                         checkListLength(box);
                         onDelete&&onDelete(obj,obj.getBase64data(),fileArr);
@@ -209,9 +213,9 @@ function upload(id,opt) {
     function sortBase64Arr() {
         var arr=[];
         for(var i=0;i<fileArr.length;i++){
-            var n=fileArr[i].name;
+            var fId=fileArr[i].fId;
             for(var j=0;j<base64dataArr.length;j++){
-                if(n==base64dataArr[j].fname){
+                if(fId==base64dataArr[j].fId){
                     arr.push(base64dataArr[j]);
                     break;
                 }
@@ -220,30 +224,14 @@ function upload(id,opt) {
         base64dataArr = arr;
     }
 
-    //  重置base64Arr
-    function base64Arr(fileArr){
-        for(var i=0;i<fileArr.length;i++){
-            var file=fileArr[i];
-            fileRead(file,null,function (read) {
-                var result = read.result;
-                var img = new Image();
-                img.onload = function () {
-                    base64dataArr.push(compress(img, file.type, quality));
-                    img = null;
-                };
-                img.src = result;
-            });
-        }
-    }
-
 // 检查listLength 控件是否显示
     function checkListLength(box) {
-        if (box.children.length < childLength) {
-            var l= box.querySelectorAll(".item").length;
+        if ( fileArr.length < maxLength ) {
             var span=listLength.getElementsByTagName("span")[0];
-            span.innerHTML=l+"/"+maxLength;
+            span.innerHTML=fileArr.length+"/"+maxLength;
             box.appendChild(listLength);
-
+        }else{
+            box.removeChild(listLength);
         }
     }
 
