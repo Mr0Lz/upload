@@ -6,7 +6,7 @@ function upload(id,opt) {
 
     var inputFile=opt.inputFile||"uploadBtn";
     var multiple=opt.multiple||false;
-    var fileArr=[],base64dataArr=[],imgDiv=[];
+    var fileArr=[],imgDiv=[];
     var onInputChange=opt.onInputChange;
     var onDelete=opt.onDelete;
     var onClickImg=opt.onClickImg;
@@ -40,15 +40,22 @@ function upload(id,opt) {
             file: div.querySelector("input"),
             box: div.querySelector('.box'),
             getFileArr:function(type){
-                var arr = [];
-                for (var i=0;i<fileArr.length;i++){
-                    arr.push(fileArr[i].f);
+                if (type == 1) {
+                    var arr = [];
+                    for (var i=0;i<fileArr.length;i++){
+                        arr.push(fileArr[i].f);
+                    }
+                    return arr ;
+                }else{
+                    return   fileArr ;
                 }
-                return type == 1 ? arr : fileArr ;
             },
             getBase64data:function(){
-                sortBase64Arr(fileArr);
-                return base64dataArr;
+                var arr = [];
+                for (var i=0;i<fileArr.length;i++){
+                    arr.push(fileArr[i].base64data);
+                }
+                return arr ;
             }
         };
     }
@@ -82,7 +89,7 @@ function upload(id,opt) {
             for (var i = 0; i < files.length  ; i++) {
                 if( fileArr.length < maxLength) {
                     var f = files[i];
-                    var fId = randomId (10);
+                    var fId = randomId(8);
                     var div = imgbox(fId);
                     div.setAttribute("fId", fId);
                     box.appendChild(div);
@@ -104,34 +111,39 @@ function upload(id,opt) {
 
 
     function readImg(files, imgDiv) {
-        for (var i = 0; i < files.length; i++) {
+
+        for (var i = 0; i < files.length; i++) {//每个图片
             // 接受的图片类型
             var file = files[i].f;
             if (!/\/(?:jpeg|jpg|png|jpeg|gif|svg)/i.test(file.type)) return;
-            read(files[i], imgDiv[i]);
+            (function (file,imgDiv,i) {
+                setTimeout(function () {
+                    read(files[i], imgDiv[i]);
+                },0)
+            })(file,imgDiv,i)
+
         }
     }
 
     function read(file,viewer) {
-        base64dataArr.length = 0;
         try {
             var previewer = viewer.getElementsByTagName("img")[0];
         } catch (e) {
             console.log("已经超过" + maxLength + "张");
             return
         }
-        fileRead(file,previewer,function (read,previewer) {
+        fileRead(file,previewer,function (read,previewer,fl) {
             var result = read.result;
             var img = new Image();
             img.onload = function () {
                 var compressedDataUrl = "";
                 // 如果图片小于 200kb，不压缩
                 if (result.length <= maxsize) {
-                    compressedDataUrl = compress(img, file.f.type, 0);
+                    compressedDataUrl = compress(img, fl.f.type, 0);
                 }else {
-                    compressedDataUrl = compress(img, file.f.type, quality);
+                    compressedDataUrl = compress(img, fl.f.type, quality);
                 }
-                base64dataArr.push({fId:file.fId,base64dataUrl:compressedDataUrl});
+                fl.base64data = compressedDataUrl;
                 toPreviewer(previewer,compressedDataUrl);
                 img = null;
             };
@@ -143,7 +155,7 @@ function upload(id,opt) {
     function fileRead(file,previewer,fn) {
         var reader = new FileReader();
         reader.onload = function () {
-            fn(this,previewer);
+            fn(this,previewer,file);
         };
         reader.readAsDataURL(file.f);
     }
@@ -209,30 +221,23 @@ function upload(id,opt) {
             }
         }
     }
-    //按用户上传顺序排序Base64Arr
-    function sortBase64Arr() {
-        var arr=[];
-        for(var i=0;i<fileArr.length;i++){
-            var fId=fileArr[i].fId;
-            for(var j=0;j<base64dataArr.length;j++){
-                if(fId==base64dataArr[j].fId){
-                    arr.push(base64dataArr[j]);
-                    break;
-                }
-            }
-        }
-        base64dataArr = arr;
-    }
 
 // 检查listLength 控件是否显示
     function checkListLength(box) {
-        if ( fileArr.length < maxLength ) {
-            var span=listLength.getElementsByTagName("span")[0];
-            span.innerHTML=fileArr.length+"/"+maxLength;
-            box.appendChild(listLength);
-        }else{
-            box.removeChild(listLength);
-        }
+        setTimeout(function(){
+            if ( fileArr.length < maxLength ) {
+                var span=listLength.getElementsByTagName("span")[0];
+                span.innerHTML=fileArr.length+"/"+maxLength;
+                box.appendChild(listLength);
+            }else{
+                try{
+                    box.removeChild(listLength);
+                }catch(err){
+                    console.log('请勿继续添加图片');
+                }
+            }
+        },0);
+
     }
 
     function createElement(el, html, opt) {

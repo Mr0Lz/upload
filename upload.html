@@ -84,7 +84,7 @@ display: block;
     var fileArr=upload("#upload", {
         inputFile: "uploadBtn",
         maxsize: 200,// 200 KB 对应的字节数
-        quality: 0.75,//图片压缩率   超过maxsize的大小才会压缩
+        quality: 0.2,//图片压缩率   超过maxsize的大小才会压缩
         maxLength: 3,//最多上传几张
         multiple:false,//单选
         onDelete:function(obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data,fileArr   删除文件是触发
