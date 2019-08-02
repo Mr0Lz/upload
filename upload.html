@@ -84,14 +84,21 @@ display: block;
     var fileArr=upload("#upload", {
         inputFile: "uploadBtn",
         maxsize: 200,// 200 KB 对应的字节数
-        quality: 0.2,//图片压缩率   超过maxsize的大小才会压缩
-        maxLength: 3,//最多上传几张
+        quality: 0.09,//图片压缩率   超过maxsize的大小才会压缩
+        maxLength: 6,//最多上传几张
         multiple:false,//单选
         onDelete:function(obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data,fileArr   删除文件是触发
             //console.log(obj,base64dataArr,fileArr);
         },
-        onInputChange:function (obj,base64dataArr,fileArr) {//obj 控件的doc对象集合,base64data,fileArr
-            //console.log(obj,base64dataArr,fileArr);
+        onInputChange:function (obj,fileArr) {//obj 控件的doc对象集合,fileArr
+            //console.log(obj,fileArr);
+            console.log('onInputChange',fileArr);
+        },
+        onZipStart:function(){
+            console.log('onZipStart');
+        },
+        onZipEnd:function(){
+            console.log('onZipEnd');
         }
 
     });
