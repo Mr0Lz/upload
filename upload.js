@@ -11,7 +11,6 @@ function upload(id,opt) {
     var onZipStart=opt.onZipStart;
     var onZipEnd=opt.onZipEnd;
     var zipFlage=0;
-    var amount=0;//input 选择的图片长度 和 已经有的图片长度 之和
     var onDelete=opt.onDelete;
     var onClickImg=opt.onClickImg;
     var isDOM = ( typeof HTMLElement === 'object' ) ?
@@ -80,8 +79,6 @@ function upload(id,opt) {
     function preview(filechooser, maxsize, box ) {
 
         filechooser.onchange = function () {
-            zipFlage=0;//压缩完成标识重置
-            amount = fileArr.length;
             var files = this.files;
             //选中文件时的长度 大于 最大长度 return
             if ((files.length + fileArr.length)  > maxLength) {
@@ -102,11 +99,11 @@ function upload(id,opt) {
                     box.insertBefore(div,listLength);//在listLength之前插入
                     fileArr.push({f:f,fId:fId});
                     imgDiv.push(div);
+                    zipFlage++; //累计需要加压缩的数量
                 }else{
                     break;
                 }
             }
-            amount+=files.length;
             checkListLength(box);
             readImg(fileArr, imgDiv);
 
@@ -120,15 +117,14 @@ function upload(id,opt) {
 
     function readImg(files, imgDiv) {
         //开始压缩之前
-        if(amount <= maxLength){
-            console.log(zipFlage,amount,'start');
+        if(zipFlage>0){
+            console.log(zipFlage,'start');
             onZipStart&&onZipStart();
         }
         for (var i = 0; i < files.length; i++) {//每个图片
             // 接受的图片类型
             var file = files[i].f;
             if(files[i].base64data){ //已经压缩生成过base64的文件不许再压缩
-                console.log(i,'fff');
                 continue;
             }
             if (!/\/(?:jpeg|jpg|png|jpeg|gif|svg)/i.test(file.type)) return;
@@ -161,7 +157,7 @@ function upload(id,opt) {
                     compressedDataUrl = compress(img, fl.f.type, quality);
                 }
                 fl.base64data = compressedDataUrl;
-                zipFlage++;
+                zipFlage--; //压缩完成--  直到全部压缩完成
                 toPreviewer(previewer,compressedDataUrl);
                 img = null;
             };
@@ -183,8 +179,8 @@ function upload(id,opt) {
     function toPreviewer(previewer,dataUrl) {
         previewer.src = dataUrl;
         filechooser.value = '';
-        if(zipFlage == amount && zipFlage <= maxLength){
-            console.log(zipFlage,amount);
+        if(zipFlage == 0){
+            console.log(zipFlage,'end');
             onZipEnd&&onZipEnd();
         }
         onInputChange&&onInputChange(obj,fileArr);
@@ -220,8 +216,6 @@ function upload(id,opt) {
                         removeArr(imgDiv,"getAttribute","fId",name);
                         box.removeChild(this);
                         checkListLength(box);
-                            zipFlage=fileArr.length;//重置
-                            amount=fileArr.length;//重置
                         onDelete&&onDelete(obj,obj.getBase64data(),fileArr);
                     }
                 }
