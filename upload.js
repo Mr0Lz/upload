@@ -152,7 +152,7 @@ function upload(id,opt) {
                 var compressedDataUrl = "";
                 // 如果图片小于 200kb，不压缩
                 if (result.length <= maxsize) {
-                    compressedDataUrl = compress(img, fl.f.type);
+                    compressedDataUrl = compress(img, fl.f.type, 0.92);
                 }else {
                     compressedDataUrl = compress(img, fl.f.type, quality);
                 }
