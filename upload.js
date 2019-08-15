@@ -104,6 +104,7 @@ function upload(id,opt) {
                     break;
                 }
             }
+            filechooser.value = '';//需要清空file input 选中的文件不然 谷歌浏览器重复选择 相同文件不触发onchange事件
             checkListLength(box);
             readImg(fileArr, imgDiv);
 
@@ -178,7 +179,6 @@ function upload(id,opt) {
 
     function toPreviewer(previewer,dataUrl) {
         previewer.src = dataUrl;
-        filechooser.value = '';
         if(zipFlage == 0){
             console.log(zipFlage,'end');
             onZipEnd&&onZipEnd();
