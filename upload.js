@@ -4,16 +4,16 @@ function upload(id,opt) {
         return;
     }
 
-    var inputFile=opt.inputFile||"uploadBtn";
-    var multiple=opt.multiple||false;
-    var fileArr=[],imgDiv=[];
-    var onInputChange=opt.onInputChange;
-    var onZipStart=opt.onZipStart;
-    var onZipEnd=opt.onZipEnd;
-    var zipFlage=0;
-    var onDelete=opt.onDelete;
-    var onClickImg=opt.onClickImg;
-    var isDOM = ( typeof HTMLElement === 'object' ) ?
+    var inputFile=opt.inputFile||"uploadBtn",
+        multiple=opt.multiple||false,
+        fileArr=[],imgDiv=[],
+        onInputChange=opt.onInputChange,
+        onZipStart=opt.onZipStart,
+        onZipEnd=opt.onZipEnd,
+        zipFlage=0,
+        onDelete=opt.onDelete,
+        onClickImg=opt.onClickImg,
+        isDOM = ( typeof HTMLElement === 'object' ) ?
         function(obj){
             return obj instanceof HTMLElement;
         } :
@@ -25,9 +25,9 @@ function upload(id,opt) {
         var str = '<div class="box"><div  class="uploadBtn">' +
             '<input type="file"  ' +(multiple?'':'multiple') +' accept="image/gif,image/jpeg,image/jpg,image/png,image/svg">' +
             '<span>添加图片</span></div>' +
-            '</div>';
+            '</div>',
+            div = null;
 
-        var div = null;
         if (id == null){
             return null;
         }
@@ -62,13 +62,16 @@ function upload(id,opt) {
             }
         };
     }
-    var obj = init(id);
-    var filechooser = obj.file;
+    var obj = init(id),
+        filechooser = obj.file,
     // 200 KB 对应的字节数
-    var maxsize = opt.maxsize ? opt.maxsize*1024 : 200 * 1024;
-    var quality=  opt.quality ? opt.quality : 0.75;
-    var maxLength =  opt.maxLength ? opt.maxLength : 3;
-    var listLength = listLengthFn();
+        maxsize = opt.maxsize ? opt.maxsize*1024 : 200 * 1024,
+        quality=  opt.quality ? opt.quality : 0.75,
+        maxLength =  opt.maxLength ? opt.maxLength : 3,
+        listLength = listLengthFn(),
+        maxWidth = 400, //canvas 裁剪像素最大尺寸限制
+        maxHeight = 400;
+
     obj.box.appendChild(listLength);
     preview(filechooser, maxsize, obj.box,listLength);
 
@@ -91,9 +94,9 @@ function upload(id,opt) {
             }
             for (var i = 0; i < files.length  ; i++) {
                 if( fileArr.length < maxLength) {
-                    var f = files[i];
-                    var fId = randomId(8);
-                    var div = imgbox(fId);
+                    var f = files[i],
+                        fId = randomId(8),
+                        div = imgbox(fId);
                     div.setAttribute("fId", fId);
                     // box.appendChild(div);
                     box.insertBefore(div,listLength);//在listLength之前插入
@@ -284,13 +287,31 @@ function upload(id,opt) {
         var canvas = document.createElement("canvas");
         var ctx = canvas.getContext('2d');
 
-        var width = img.width;
-        var height = img.height;
-        canvas.width = width;
-        canvas.height = height;
+
+            //原尺寸
+           var width = img.width,
+            height = img.height,
+            // 目标尺寸
+            targetWidth = width,
+            targetHeight = height;
+
+                // 图片尺寸超过400x400的限制
+    if (width > maxWidth || height > maxHeight) {
+        if (width / height > maxWidth / maxHeight) {
+            // 更宽，按照宽度限定尺寸
+            targetWidth = maxWidth;
+            targetHeight = Math.round(maxWidth * (height / width));
+        } else {
+            targetHeight = maxHeight;
+            targetWidth = Math.round(maxHeight * (width / height));
+        }
+    }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
         var base64data = canvas.toDataURL(fileType, quality);
         canvas = ctx = null;
         return base64data;
