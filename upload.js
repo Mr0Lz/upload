@@ -293,7 +293,8 @@ function upload(id,opt) {
             height = img.height,
             // 目标尺寸
             targetWidth = width,
-            targetHeight = height;
+            targetHeight = height,
+            base64data = null;
 
                 // 图片尺寸超过400x400的限制
     if (width > maxWidth || height > maxHeight) {
@@ -312,7 +313,7 @@ function upload(id,opt) {
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, targetWidth, targetHeight);
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        var base64data = canvas.toDataURL(fileType, quality);
+        base64data = canvas.toDataURL(fileType, quality);
         canvas = ctx = null;
         return base64data;
     }
