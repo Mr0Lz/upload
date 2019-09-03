@@ -150,15 +150,21 @@ function upload(id,opt) {
             return
         }
         fileRead(file,previewer,function (read,previewer,fl) {
-            var result = read.result;
+            console.log(read);
+            // var result = read.result;
+            //因为要解决移动端图片被旋转问题 需要在ArrayBuffer 中读取图片元数据 Orientation：拍摄方向
+            //先读取ArrayBuffer中的图片元数据 Orientation：拍摄方向
+            var orientation = imgOrientation(read.result);
+            //然后才转换为base64使用
+            var result = 'data:image/'+fl.f.type+';base64,'+transformArrayBufferToBase64 (read.result);
             var img = new Image();
             img.onload = function () {
                 var compressedDataUrl = "";
                 // 如果图片小于 200kb，不压缩
                 if (result.length <= maxsize) {
-                    compressedDataUrl = compress(img, fl.f.type, 0.92);
+                    compressedDataUrl = compress(img, fl.f.type, 0.92,orientation);
                 }else {
-                    compressedDataUrl = compress(img, fl.f.type, quality);
+                    compressedDataUrl = compress(img, fl.f.type, quality,orientation);
                 }
                 fl.base64data = compressedDataUrl;
                 zipFlage--; //压缩完成--  直到全部压缩完成
@@ -175,7 +181,11 @@ function upload(id,opt) {
         reader.onload = function () {
             fn(this,previewer,file);
         };
-        reader.readAsDataURL(file.f);
+        //reader.readAsDataURL(file.f); //直接转换为base64 ，安卓 ios 会根据拍照角度方式进行对图片选择，生成预览的时候发现图片被旋转了
+        reader.readAsArrayBuffer(file.f);//解决方法1.Exif.js库 读取图像的元数据 
+                                            //Orientation：拍摄方向 值[1, 6, 3, 8] 是相互一次顺时针 90 度方向的关系，
+                                            //而 [2, 5, 4, 7] 则对应了 [1, 6 ,3, 8] 的水平镜像  在canvas中旋转纠正 宽高矫正 
+                                        // 2. ArrayBuffer 中读取 Orientation：拍摄方向
     }
 
 
@@ -201,7 +211,7 @@ function upload(id,opt) {
         var div = createElement("div", "<span>0/"+maxLength+"</span>");
         // div.setAttribute('img-length','listLength');
         div.setAttribute('class','listLength');
-        return div
+        return div;
     }
 
     function imgbox(name) {
@@ -281,35 +291,108 @@ function upload(id,opt) {
         return div;
     }
 
+    //ArrayBuffer转Base64
+    function transformArrayBufferToBase64 (buffer) {
+        var binary = '';
+        var bytes = new Uint8Array(buffer);
+        for (var len = bytes.byteLength, i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+    //ArrayBuffer 中读取 Orientation：拍摄方向  
+    function imgOrientation(buffer){
+        // 建立一个 DataView
+        var dv = new DataView(buffer);
+        // 设置一个位置指针
+        var idx = 0;
+        // 设置一个默认结果
+        var value = 1;
+        // 检测是否是 JPEG
+        if (buffer.length < 2 || dv.getUint16(idx) !== 0xFFD8 ) {
+            return false
+        }
+        idx += 2;
+        var maxBytes = dv.byteLength;
+        // 遍历文件内容，找到 APP1, 即 EXIF 所在的标识
+        while (idx < maxBytes - 2) {
+            var uint16 = dv.getUint16(idx);
+            idx += 2;
+            switch (uint16) {
+                case 0xFFE1:
+                    // 找到 EXIF 后，在 EXIF 数据内遍历，寻找 Orientation 标识
+                    var exifLength = dv.getUint16(idx);
+                    maxBytes = exifLength - 2;
+                    idx += 2;
+                    break;
+                case 0x0112:
+                    // 找到 Orientation 标识后，读取 DDDDDDDD 部分的内容，并把 maxBytes 设为 0, 结束循环。
+                    value = dv.getUint16(idx + 6, false);
+                    maxBytes = 0;
+                    break
+            }
+        }
+        return value;
+    }
 
     //压缩图片 返回base64data
-    function compress(img, fileType, quality) {
+    function compress(img, fileType, quality,orientation) {
         var canvas = document.createElement("canvas");
         var ctx = canvas.getContext('2d');
 
 
-            //原尺寸
-           var width = img.width,
-            height = img.height,
-            // 目标尺寸
-            targetWidth = width,
-            targetHeight = height,
-            base64data = null;
+        //原尺寸
+        var width = img.width,
+        height = img.height,
+        // 目标尺寸
+        targetWidth = width,
+        targetHeight = height,
+        base64data = null;
 
-                // 图片尺寸超过400x400的限制
-    if (width > maxWidth || height > maxHeight) {
-        if (width / height > maxWidth / maxHeight) {
-            // 更宽，按照宽度限定尺寸
-            targetWidth = maxWidth;
-            targetHeight = Math.round(maxWidth * (height / width));
-        } else {
-            targetHeight = maxHeight;
-            targetWidth = Math.round(maxHeight * (width / height));
+        // 图片尺寸超过400x400的限制
+        if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+                // 更宽，按照宽度限定尺寸
+                targetWidth = maxWidth;
+                targetHeight = Math.round(maxWidth * (height / width));
+            } else {
+                targetHeight = maxHeight;
+                targetWidth = Math.round(maxHeight * (width / height));
+            }
         }
-    }
 
         canvas.width = targetWidth;
         canvas.height = targetHeight;
+
+        //根据Orientation：拍摄方向  矫正图片旋转角度
+        if(orientation){
+
+
+            // 5, 6, 7, 8 是 1, 2, 3, 4 的镜像
+              if ([5,6,7,8].indexOf(orientation) > -1) {
+                canvas.width = targetHeight;
+                canvas.height = targetWidth;
+              } 
+              else {
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+              }
+
+
+            switch (orientation) {
+              case 2: ctx.transform(-1, 0, 0, 1, targetWidth, 0); break;
+              case 3: ctx.transform(-1, 0, 0, -1, targetWidth, targetHeight ); break;
+              case 4: ctx.transform(1, 0, 0, -1, 0, targetHeight ); break;
+              case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+              case 6: ctx.transform(0, 1, -1, 0, targetHeight , 0); break;
+              case 7: ctx.transform(0, -1, -1, 0, height , targetWidth); break;
+              case 8: ctx.transform(0, -1, 1, 0, 0, targetWidth); break;
+              default: ctx.transform(1, 0, 0, 1, 0, 0);
+            }
+        }
+
+
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, targetWidth, targetHeight);
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
