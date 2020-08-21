@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<script type="text/javascript" src="upload.js"></script>
+	<style type="text/css">
+		#imgbox:after{
+			content: '';
+			clear: both;
+			/*overflow: hidden;*/
+		}
+		#imgbox div{
+			/*float: left;*/
+			display: block;
+			position: relative;
+			width: 100px;
+			height: 100px;
+			background: #eee;
+			margin-right: 10px;
+			margin-bottom: 10px;
+		}
+		#imgbox div i{
+			display: block;
+			position: absolute;
+			width: 20px;
+			height: 20px;
+			background: url(./icon_del.png) no-repeat;
+			background-size: 100%;
+			top: -6px;
+			right: -6px;
+			z-index: 1;
+		}
+
+		
+		#imgbox div img {
+			display: block;
+			margin: 0 auto;
+			margin-top: 50%;
+			-webkit-transform: translateY(-50%);
+			transform: translateY(-50%);
+			max-width: 100%;
+			max-height: 100%;
+		}
+		
+	</style>
+</head>
+<body style="height: 4000px;">
+	<!-- <div id="test">riririri<span>span</span></div><br><br><br> -->
+	<div id="test2"><span>多选多选多选多选</span></div>
+	<!-- <div>多选多选多选多选</div> -->
+	<!-- <input id="test3" type="file" /><br><br> -->
+	<br><br><br>
+	<a href="javascript:;" id="dele" >删除</a>>
+	<!-- <input id="test4" type="file" /> -->
+
+	<br><br>
+	<!-- <div id="imgbox"><span style="float: left;">dasdasdadas</span></div> -->
+	<!-- <div id="imgbox">dasdasdadas</div> -->
+	<div id="imgbox">
+		<!-- <span class="insertBefore">dasdasdadas</span> -->
+	</div>
+	<div class="imgbox"></div>
+
+</body>
+<script type="text/javascript">
+//	console.log('index',upload(document.querySelector('#test'),{}))
+//	console.log('index',upload('#test2',{}))
+//	console.log('index',upload('#test3',{}))
+// upload(document.querySelector('#test'),{})
+// upload('#test3',{multiple:true})
+// upload('#test4',{})
+
+
+var imgbox = document.getElementById('imgbox');
+
+var test2 =  upload('#test2',{
+	multiple:true,
+	maxLength:5,
+	previewBox: '#imgbox',//图片预览区域 样式自定义
+	// previewType: '.insertBefore', //img 插入指定元素之前
+	// quality:0.5,
+	onChange:function(fileObjArr,base64data){
+		console.log('onChange',fileObjArr,base64data)
+	},
+	onEach(f,base64){//按照顺序返回每个文件
+		console.log('onEach',f,base64)
+	},
+	onClickImg:function(e,file,base64data){//点击图片事件
+		console.log('onClickImg',e,file,base64data);
+	},
+	onDelete:function(e,file,base64data){//删除按钮事件
+		console.log('onDelete',e,file,base64data);
+	}
+})
+
+
+
+var dele = document.getElementById('dele');
+	dele.onclick = function(e){
+
+		test2.delFile(0,function(fileArr,base64data){
+			console.log('dele.onclick',fileArr,base64data)
+		})
+
+	}
+
+
+</script>
+</html>
