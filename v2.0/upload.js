@@ -48,8 +48,8 @@ function upload(id,opt){
 
         //文件input onchange事件
         fileInp.onchange = function(){
-            //edge浏览器 改变value 会处方onchange
-            if(this.value == ''){
+            //edge浏览器 改变value 会处方onchange   安卓手机打开文件选择器,然后返回不选中文件会有个bug有个文件,解决这个问题 this.files[0].size=0
+            if( this.value == '' || this.files[0].size == 0){
                 return ;
             }
             // 每次选择的文件
